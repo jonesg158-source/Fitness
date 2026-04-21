@@ -7,8 +7,9 @@ export function ServiceWorkerRegister() {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
     if (process.env.NODE_ENV !== "production") return;
+    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
     navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
+      .register(`${base}/sw.js`, { scope: `${base}/` })
       .catch((e) => console.error("SW register failed", e));
   }, []);
   return null;

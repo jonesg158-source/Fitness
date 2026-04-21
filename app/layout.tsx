@@ -4,12 +4,14 @@ import { LockGate } from "@/components/LockGate";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { TabBar } from "@/components/TabBar";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const metadata: Metadata = {
   title: "Fitness 90",
   description:
     "Personal 90-day transformation tracker: adaptive macros, hypertrophy programming, progress photos.",
   applicationName: "Fitness 90",
-  manifest: "/manifest.webmanifest",
+  manifest: `${BASE_PATH}/manifest.webmanifest`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
