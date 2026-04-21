@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+.DS_Store
+*.log
+.env*
+!.env.example
+coverage
+.vercel
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+tsconfig.tsbuildinfo
