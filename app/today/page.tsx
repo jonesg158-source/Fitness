@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db/schema";
@@ -9,6 +10,7 @@ import { decryptNumber } from "@/lib/crypto/pin";
 import { dayNumber, todayIso } from "@/lib/util/date";
 import { initialTargets } from "@/lib/tdee/initial";
 import { setDailyWeight } from "@/lib/db/repos";
+import { sumMacros } from "@/lib/nutrition/macros";
 
 export default function TodayPage() {
   const router = useRouter();
@@ -19,6 +21,15 @@ export default function TodayPage() {
     () => db.dailyWeight.get(`me|${today}`),
     [today],
   );
+  const todayEntries = useLiveQuery(
+    () =>
+      db.foodLogEntry
+        .where("[tenantId+date]")
+        .equals(["me", today])
+        .toArray(),
+    [today],
+  );
+  const consumed = useMemo(() => sumMacros(todayEntries ?? []), [todayEntries]);
 
   const [startKg, setStartKg] = useState<number | null>(null);
   const [todayKg, setTodayKg] = useState<number | null>(null);
@@ -90,20 +101,43 @@ export default function TodayPage() {
           <div className="flex items-baseline justify-between">
             <div>
               <div className="text-xs uppercase opacity-60 tracking-wider">
-                Today&apos;s target
+                Today
               </div>
               <div className="text-2xl font-bold">
-                {targets.targetKcal.toLocaleString()} kcal
+                {Math.round(consumed.kcal).toLocaleString()}
+                <span className="text-sm font-normal opacity-60">
+                  {" "}
+                  / {targets.targetKcal.toLocaleString()} kcal
+                </span>
               </div>
             </div>
-            <div className="text-sm opacity-70">
-              Est. TDEE {targets.tdee.toLocaleString()}
-            </div>
+            <Link
+              href={`/nutrition/log?date=${today}`}
+              className="text-sm text-brand-600 font-medium"
+            >
+              Log →
+            </Link>
           </div>
+          <CalorieBar
+            value={consumed.kcal}
+            target={targets.targetKcal}
+          />
           <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
-            <Macro label="Protein" value={`${targets.proteinG} g`} />
-            <Macro label="Carbs" value={`${targets.carbG} g`} />
-            <Macro label="Fat" value={`${targets.fatG} g`} />
+            <Macro
+              label="Protein"
+              value={consumed.protein}
+              target={targets.proteinG}
+            />
+            <Macro
+              label="Carbs"
+              value={consumed.carbs}
+              target={targets.carbG}
+            />
+            <Macro
+              label="Fat"
+              value={consumed.fat}
+              target={targets.fatG}
+            />
           </div>
           <p className="mt-3 text-xs opacity-60">
             Initial estimate. Adaptive TDEE takes over after ~1 week of logging.
@@ -133,11 +167,38 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Macro({ label, value }: { label: string; value: string }) {
+function Macro({
+  label,
+  value,
+  target,
+}: {
+  label: string;
+  value: number;
+  target: number;
+}) {
+  const pct = Math.min(100, (value / Math.max(1, target)) * 100);
   return (
     <div className="rounded-xl bg-slate-100 dark:bg-slate-800 py-2">
       <div className="text-xs opacity-60">{label}</div>
-      <div className="font-semibold">{value}</div>
+      <div className="font-semibold">
+        {Math.round(value)}
+        <span className="font-normal opacity-50"> / {target} g</span>
+      </div>
+      <div className="mt-1 mx-2 h-1 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden">
+        <div className="h-full bg-brand-600" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function CalorieBar({ value, target }: { value: number; target: number }) {
+  const pct = Math.min(100, Math.max(0, (value / Math.max(1, target)) * 100));
+  return (
+    <div className="mt-3 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+      <div
+        className="h-full bg-brand-600 transition-[width] duration-300"
+        style={{ width: `${pct}%` }}
+      />
     </div>
   );
 }

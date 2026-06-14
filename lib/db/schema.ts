@@ -1,16 +1,25 @@
 import Dexie, { type Table } from "dexie";
-import type { DailyWeight, KV, Profile } from "./types";
+import type {
+  DailyWeight,
+  FoodItem,
+  FoodLogEntry,
+  KV,
+  Meal,
+  Profile,
+} from "./types";
 
 /**
  * Fitness 90 local database.
  *
- * v1 — Phase 1: profile, dailyWeight, kv (crypto + onboarding singletons).
- * Future versions will add foodItem, foodLogEntry, exerciseDef, programTemplate,
- * programInstance, trainingSession, setLog, progressPhoto, tdeeSnapshot.
+ * v1 — Phase 1: profile, dailyWeight, kv.
+ * v2 — Phase 2: foodItem, foodLogEntry, meal.
  */
 class FitnessDB extends Dexie {
   profile!: Table<Profile, string>;
   dailyWeight!: Table<DailyWeight, string>;
+  foodItem!: Table<FoodItem, string>;
+  foodLogEntry!: Table<FoodLogEntry, string>;
+  meal!: Table<Meal, string>;
   kv!: Table<KV, string>;
 
   constructor() {
@@ -18,6 +27,14 @@ class FitnessDB extends Dexie {
     this.version(1).stores({
       profile: "id, tenantId, goal",
       dailyWeight: "id, [tenantId+date], date",
+      kv: "key",
+    });
+    this.version(2).stores({
+      profile: "id, tenantId, goal",
+      dailyWeight: "id, [tenantId+date], date",
+      foodItem: "id, source, barcode, name, updatedAt",
+      foodLogEntry: "id, [tenantId+date], date, mealType, foodItemId",
+      meal: "id, name, updatedAt",
       kv: "key",
     });
   }

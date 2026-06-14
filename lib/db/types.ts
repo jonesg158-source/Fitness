@@ -78,3 +78,74 @@ export interface OnboardingState {
     activityMultiplier: number;
   }>;
 }
+
+/* ---------- Nutrition ---------- */
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type FoodSource = "off" | "custom" | "recipe";
+
+export interface PerMacros {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface FoodServing {
+  /** Stable id local to the food (e.g. "serving", "100g", "can"). */
+  id: string;
+  /** Human label, e.g. "1 scoop (30 g)". */
+  label: string;
+  /** Mass in grams represented by 1 of this serving. */
+  grams: number;
+}
+
+export interface FoodItem {
+  /** "off|<barcode>" for OFF imports, "custom|<uuid>" for user-created. */
+  id: string;
+  tenantId: TenantId;
+  source: FoodSource;
+  /** EAN/UPC if known. */
+  barcode?: string;
+  name: string;
+  brand?: string;
+  /** Macros per 100 g of edible product. */
+  per100g: PerMacros;
+  servings: FoodServing[];
+  /** Last time we touched / refreshed this row. */
+  updatedAt: number;
+  createdAt: number;
+}
+
+export interface FoodLogEntry {
+  /** "me|<isodate>|<uuid>" */
+  id: string;
+  tenantId: TenantId;
+  /** YYYY-MM-DD local date the food was consumed. */
+  date: string;
+  mealType: MealType;
+  foodItemId: string;
+  /** Snapshot of the food name at time of logging (resilient to deletion). */
+  nameSnapshot: string;
+  /** Either grams-direct or a chosen serving × quantity. */
+  grams: number;
+  serving?: {
+    id: string;
+    qty: number;
+  };
+  /** Computed macros at log time so the entry is self-contained. */
+  macros: PerMacros;
+  /** Optional per-entry override (e.g. user knows the label was wrong). */
+  macroOverride?: Partial<PerMacros>;
+  createdAt: number;
+}
+
+export interface Meal {
+  id: string;
+  tenantId: TenantId;
+  name: string;
+  items: { foodItemId: string; grams: number }[];
+  createdAt: number;
+  updatedAt: number;
+}
